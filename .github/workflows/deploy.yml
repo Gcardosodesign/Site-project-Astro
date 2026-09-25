@@ -1,0 +1,51 @@
+name: Build e Deploy do Site
+
+# Roda automaticamente a cada push na branch main.
+# Nenhuma IA participa deste processo — é 100% determinístico.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar dependências
+        run: npm install
+
+      - name: Build do site (Astro)
+        run: npm run build
+
+      - name: Preparar artefato para GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publicar no GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+# Alternativa: se preferir Vercel ou Netlify em vez de GitHub Pages,
+# basta conectar o repositório diretamente no painel deles — eles
+# detectam o Astro automaticamente e nem precisam deste workflow.
